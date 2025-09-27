@@ -37,6 +37,33 @@ function limiter(mwName) {
   return rateLimit[mwName];
 }
 
+/**
+ * Router-level request logger for admin routes
+ * - logs method, path, rid and x-request-id (if provided)
+ * - does not print sensitive info
+ */
+router.use((req, res, next) => {
+  try {
+    const now = new Date().toISOString();
+    const reqId = req.header("x-request-id") || req.requestId || null;
+    const method = req.method;
+    const path = req.originalUrl || req.url;
+    const rid = req.params?.rid || null;
+
+    // use console.info so these show up at info level
+    console.info(`[${now}] [admin.route] Enter`, {
+      reqId,
+      method,
+      path,
+      rid,
+    });
+  } catch (e) {
+    // don't break routes because of logging
+    console.warn("[admin.route] route logger failed", e && e.message);
+  }
+  return next();
+});
+
 // --- Public routes ---
 
 // Admin login (admin PIN) - sensitiveLimiter
@@ -51,7 +78,7 @@ router.post(
   adminController.staffLogin
 );
 
-// GET /api/:rid/admin/menu (public)
+// GET /api/:rid/admin/menu (public read)
 router.get("/menu", adminController.getMenu);
 
 // Generate override token via PIN (no JWT required; controller verifies PIN).
@@ -63,39 +90,97 @@ router.post(
 );
 
 // --- Protected admin routes (require admin JWT / role) ---
+// Each protected route explicitly mounts authMiddleware then requireRole('admin')
+// This avoids accidental public-route skipping or middleware-order issues.
 
-// Admin-only middleware
-const adminOnly = [authMiddleware, requireRole("admin")];
+/**
+ * Update menu (admin)
+ * POST /api/:rid/admin/menu
+ */
+router.post(
+  "/menu",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.updateMenu
+);
 
-// Update menu (admin)
-router.post("/menu", adminOnly, adminController.updateMenu);
+/**
+ * Add single menu item (admin)
+ * POST /api/:rid/admin/menu/items
+ */
+router.post(
+  "/menu/items",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.addMenuItem
+);
 
-// Add single menu item (admin)
-router.post("/menu/items", adminOnly, adminController.addMenuItem);
+/**
+ * Analytics and export (admin)
+ */
+router.get(
+  "/analytics",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.getAnalytics
+);
+router.post(
+  "/export",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.exportReport
+);
 
-// Analytics and export (admin)
-router.get("/analytics", adminOnly, adminController.getAnalytics);
-router.post("/export", adminOnly, adminController.exportReport);
+/**
+ * Table management (admin)
+ */
+router.patch(
+  "/tables/:id",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.updateTable
+);
 
-// Table management (admin)
-router.patch("/tables/:id", adminOnly, adminController.updateTable);
-
-// PIN management (admin)
+/**
+ * PIN management (admin)
+ */
 router.patch(
   "/pin",
-  adminOnly,
+  authMiddleware,
+  requireRole("admin"),
   limiter("sensitiveLimiter"),
   adminController.updatePin
 );
 
-// Staff aliases management (admin)
-router.patch("/staff-aliases", adminOnly, adminController.updateStaffAliases);
+/**
+ * Staff aliases management (admin)
+ */
+router.patch(
+  "/staff-aliases",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.updateStaffAliases
+);
 
-// Update global config (taxPercent, discount, serviceCharge) - admin
-router.patch("/config", adminOnly, adminController.updateConfig);
+/**
+ * Update global config (taxPercent, discount, serviceCharge) - admin
+ */
+router.patch(
+  "/config",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.updateConfig
+);
 
-// Reopen finalized bill (admin override) - admin
-router.post("/bills/:billId/reopen", adminOnly, adminController.reopenBill);
+/**
+ * Reopen finalized bill (admin override) - admin
+ */
+router.post(
+  "/bills/:billId/reopen",
+  authMiddleware,
+  requireRole("admin"),
+  adminController.reopenBill
+);
 
 // Export the router
 module.exports = router;
