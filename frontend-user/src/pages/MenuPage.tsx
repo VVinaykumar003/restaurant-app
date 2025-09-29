@@ -1,4 +1,4 @@
-import React from "react";
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchMenu } from "../api/menu.api";
 import MenuGrid from "../components/Menu/MenuGrid";
@@ -10,16 +10,19 @@ export default function MenuPage() {
   const { tableId } = useTableFromUrl();
   const rid = import.meta.env.VITE_RID || "restro10";
 
-  const {
-    data: menu,
-    isLoading,
-    error,
-  } = useQuery(["menu", rid], () => fetchMenu(rid), {
-    staleTime: 1000 * 60 * 2,
-    retry: 1,
-  });
+ const {
+  data: menu,
+  isLoading,
+  error,
+} = useQuery({
+  queryKey: ["menu", rid],
+  queryFn: () => fetchMenu(rid),
+  staleTime: 1000 * 60 * 2,
+  retry: 1,
+});
 
-  const add = useCart((s) => s.add);
+  const add = useCart((s) => s.addItem);
+
 
   const handleAdd = (payload: {
     itemId: string;
@@ -29,6 +32,8 @@ export default function MenuPage() {
   }) => {
     add(payload);
   };
+
+  // console.log(`menu: ${menu}`)
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -50,7 +55,8 @@ export default function MenuPage() {
         {error && (
           <div className="text-center text-red-500">Failed to load menu</div>
         )}
-        {menu && (
+        {menu && 
+        (
           <MenuGrid
             items={menu.items.filter((i) => i.isActive !== false)}
             onAdd={handleAdd}

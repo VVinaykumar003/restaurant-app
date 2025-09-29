@@ -1,6 +1,6 @@
-import create from "zustand";
+import{ create }from "zustand";
 import { persist } from "zustand/middleware";
-import { CartItem } from "@/types/types";
+import  type  {CartItem } from "../types/types";
 
 type State = {
   items: CartItem[];
