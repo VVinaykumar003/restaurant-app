@@ -5,3 +5,4 @@ export async function fetchMenu(rid: string) {
   console.log("fetchMenu response:", res);
   return res;
 }
+

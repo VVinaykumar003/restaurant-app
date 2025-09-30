@@ -1,7 +1,7 @@
 // simple wrapper around fetch
 import { v4 as uuidv4 } from "uuid";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5173";
 
 type ReqOpts = RequestInit & { idempotency?: boolean };
 
@@ -13,7 +13,6 @@ export async function api<T>(path: string, opts: ReqOpts = {}) {
   if (opts.idempotency) {
     headers["Idempotency-Key"] = uuidv4();
   }
-
   const res = await fetch(API_BASE + path, {
     ...opts,
     headers: { ...headers, ...(opts.headers || {}) },

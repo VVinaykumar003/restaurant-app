@@ -16,7 +16,7 @@ try {
 let checkIdempotency = null;
 try {
   const redisHelpers = require("../../db/redis");
-  checkIdempotency = redisHelpers.checkIdempotency;
+  checkIdempotency = redisHelpers.checkIdempotency; 
 } catch (e) {
   logger &&
     logger.warn &&

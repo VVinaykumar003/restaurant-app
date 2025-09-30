@@ -404,6 +404,7 @@ async function getMenu(req, res, next) {
           serviceCharge: menuDoc.serviceCharge || 0,
           branding: menuDoc.branding || {},
         });
+      
       } else {
         logger &&
           logger.info &&

@@ -35,11 +35,13 @@ const config = {
     env("MONGODB_URI") ||
     "mongodb://127.0.0.1:27017/swadsetu",
 
+ 
+
   // Redis (either REDIS_URL or host/port/password)
   REDIS_URL: env("REDIS_URL", null),
   REDIS_HOST: env("REDIS_HOST", "127.0.0.1"),
   REDIS_PORT: parseIntEnv("REDIS_PORT", 6379),
-  REDIS_PASSWORD: env("REDIS_PASSWORD", null),
+  REDIS_PASSWORD: env("REDIS_PASSWORD", null), 
 
   PORT: parseIntEnv("PORT", 5000),
 
