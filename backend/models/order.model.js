@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const OrderItemSchema = new Schema({
-  // keep ObjectId for menu linkage but allow string lookup
-  menuItemId: { type: Schema.Types.ObjectId, required: false }, // optional if client supplies
+  // Require MongoDB ObjectId for menu items
+  menuItemId: { type: Schema.Types.ObjectId, required: true }, // Required ObjectId
   name: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1, default: 1 },
   // legacy price (client-provided) - keep but controllers will set priceAtOrder

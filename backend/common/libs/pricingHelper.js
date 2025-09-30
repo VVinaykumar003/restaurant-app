@@ -6,8 +6,8 @@
  * @returns {Promise<Object>} Pricing configuration
  */
 async function getPricingConfig(rid) {
-  const Menu = require("../models/menu.model");
-  const Admin = require("../models/admin.model");
+  const Menu = require("../../models/menu.model");
+  const Admin = require("../../models/admin.model");
 
   try {
     // Try to get active menu first

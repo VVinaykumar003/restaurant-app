@@ -71,7 +71,7 @@ router.use((req, res, next) => {
 router.post("/login", limiter("sensitiveLimiter"), adminController.login);
 
 // Staff login (shared staff PIN) - staffLimiter
-// POST /api/:rid/auth/staff-login
+// POST /api/:rid/admin/auth/staff-login
 router.post(
   "/auth/staff-login",
   limiter("staffLimiter"),

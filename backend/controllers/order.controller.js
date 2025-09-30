@@ -179,51 +179,67 @@ async function createOrder(req, res, next) {
     }
 
     // Build order items with server-side priceAtOrder lookup
+    const mongoose = require("mongoose");
+    // Validate and build order items
     const resolvedItems = [];
-    for (const it of items) {
-      const menuItemId = it.menuItemId || it.itemId || it.itemId;
-      let priceAtOrder = 0;
-      let name = it.name || "";
-      if (menuItemId && Menu) {
-        try {
-          // try to find item by itemId or itemId field
-          const menuDoc = await Menu.findOne({
-            restaurantId: rid,
-            isActive: true,
-          }).lean();
-          if (menuDoc && Array.isArray(menuDoc.items)) {
-            const found = menuDoc.items.find(
-              (m) =>
-                m.itemId === menuItemId ||
-                m.id === menuItemId ||
-                m._id == menuItemId
-            );
-            if (found) {
-              priceAtOrder = Number(found.price || 0);
-              name = found.name || name;
-            }
-          }
-        } catch (e) {
-          logger &&
-            logger.warn &&
-            logger.warn("Menu lookup failed:", e && e.message);
-        }
+    for (const [index, item] of items.entries()) {
+      // Support both "menuItemId" and "itemId" for backward compatibility
+      const menuItemId = item.menuItemId || item.itemId;
+
+      // Validate menu item ID presence
+      if (!menuItemId) {
+        return res.status(400).json({
+          error: `Missing menu item ID for item at position ${index}. Please use "menuItemId" field.`,
+        });
       }
 
-      // Fallback to client-provided price if menu not found
-      if (!priceAtOrder) {
-        priceAtOrder =
-          typeof it.price === "number" ? it.price : Number(it.price) || 0;
+      // Warn about deprecated "itemId" field
+      if (item.itemId) {
+        logger &&
+          logger.warn &&
+          logger.warn(
+            `Using deprecated "itemId" field. Please migrate to "menuItemId".`
+          );
+      }
+
+      // Validate ObjectId format
+      if (!mongoose.Types.ObjectId.isValid(menuItemId)) {
+        return res.status(400).json({
+          error: `Invalid ObjectId format for menu item at position ${index}: ${menuItemId}`,
+        });
+      }
+
+      // Look up menu item
+      let menuItem = null;
+      try {
+        // Find active menu for restaurant
+        const menuDoc = await Menu.findOne({
+          restaurantId: rid,
+          isActive: true,
+        });
+
+        // Find menu item by ObjectId
+        if (menuDoc && Array.isArray(menuDoc.items)) {
+          menuItem = menuDoc.items.find(
+            (m) => String(m._id) === String(menuItemId)
+          );
+        }
+
+        if (!menuItem) {
+          return res.status(400).json({
+            error: `Menu item not found for id: ${item.menuItemId}`,
+          });
+        }
+      } catch (e) {
+        logger && logger.warn && logger.warn("Menu lookup failed:", e);
+        return res.status(500).json({ error: "Failed to look up menu items" });
       }
 
       resolvedItems.push({
-        menuItemId: menuItemId || null,
-        name: name || it.name || "Item",
-        quantity:
-          typeof it.quantity === "number"
-            ? it.quantity
-            : Number(it.quantity) || 1,
-        priceAtOrder,
+        menuItemId: new mongoose.Types.ObjectId(menuItemId),
+        name: menuItem.name,
+        quantity: Math.max(1, Number(item.quantity) || 1),
+        priceAtOrder: menuItem.price,
       });
     }
 

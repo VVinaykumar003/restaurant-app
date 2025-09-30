@@ -173,82 +173,78 @@ async function login(req, res, next) {
     return next(err);
   }
 }
-
 /**
  * Staff login (shared staff PIN or fallback to admin PIN)
  * POST /api/:rid/auth/staff-login
  */
 async function staffLogin(req, res, next) {
-  logger &&
-    logger.info &&
-    logger.info("Enter staffLogin", { params: req.params });
+  console.log("[staffLogin] >>> ENTER", {
+    params: req.params,
+    body: req.body,
+    headers: {
+      "content-type": req.get("content-type"),
+    },
+  });
+
   try {
-    const { rid } = req.params;
+    // Use req.baseUrl to get the original rid from the router mount
+    const rid = req.baseUrl.split("/")[2];
     const { pin } = req.body || {};
 
     if (!rid) {
-      logger && logger.warn && logger.warn("staffLogin missing rid");
+      console.warn("[staffLogin] Missing rid");
       return res.status(400).json({ error: "Missing restaurant id (rid)" });
     }
     if (!pin || typeof pin !== "string") {
-      logger &&
-        logger.warn &&
-        logger.warn("staffLogin missing or invalid pin (redacted)");
+      console.warn("[staffLogin] Missing or invalid pin");
       return res.status(400).json({ error: "PIN required" });
     }
 
-    logger &&
-      logger.debug &&
-      logger.debug("staffLogin looking up Admin", { restaurantId: rid });
+    console.log("[staffLogin] Looking up Admin", { restaurantId: rid });
     const admin = await Admin.findOne({ restaurantId: rid }).lean();
+    console.log("[staffLogin] Admin lookup result", {
+      found: !!admin,
+      adminId: admin ? admin._id : null,
+    });
+
     if (!admin) {
-      logger &&
-        logger.warn &&
-        logger.warn("staffLogin admin config not found", { restaurantId: rid });
       return res.status(404).json({ error: "Admin configuration not found" });
     }
 
     const staffHash = admin.staffHashedPin || "";
     const adminHash = admin.hashedPin || "";
-    logger &&
-      logger.debug &&
-      logger.debug("staffLogin checking staffHash presence", {
-        hasStaffHash: !!staffHash,
-      });
+    console.log("[staffLogin] Hashes presence", {
+      hasStaffHash: !!staffHash,
+      hasAdminHash: !!adminHash,
+    });
 
-    // Prefer staff pin match; allow admin pin as fallback for convenience
+    // Check staff PIN if exists
     let matched = false;
     if (staffHash) {
-      logger &&
-        logger.debug &&
-        logger.debug("staffLogin comparing staff PIN (redacted)");
+      console.log("[staffLogin] Comparing staff PIN...");
       matched = await bcrypt.compare(pin, staffHash);
-      logger &&
-        logger.debug &&
-        logger.debug("staffLogin staff PIN match result", { matched });
+      console.log("[staffLogin] Staff PIN match result", { matched });
     }
-    if (!matched && adminHash) {
-      logger &&
-        logger.debug &&
-        logger.debug("staffLogin fallback compare admin PIN (redacted)");
-      matched = await bcrypt.compare(pin, adminHash);
-      logger &&
-        logger.debug &&
-        logger.debug("staffLogin admin PIN fallback match result", { matched });
+
+    // If no staff PIN configured, or if staff PIN exists but didn't match
+    if (!matched) {
+      if (adminHash && !staffHash) {
+        console.log(
+          "[staffLogin] No staff PIN configured - comparing admin PIN..."
+        );
+        matched = await bcrypt.compare(pin, adminHash);
+        console.log("[staffLogin] Admin PIN comparison result", { matched });
+      }
     }
 
     if (!matched) {
-      logger &&
-        logger.warn &&
-        logger.warn("staffLogin invalid PIN", { restaurantId: rid });
+      console.warn("[staffLogin] Invalid PIN", { restaurantId: rid });
       return res.status(401).json({ error: "Invalid PIN" });
     }
 
-    logger &&
-      logger.info &&
-      logger.info("staffLogin PIN validated, issuing staff token", {
-        restaurantId: rid,
-      });
+    console.log("[staffLogin] PIN validated → issuing staff token", {
+      restaurantId: rid,
+    });
     const token = generateToken(
       { restaurantId: rid, role: "staff" },
       { expiresIn: "8h" }
@@ -256,9 +252,7 @@ async function staffLogin(req, res, next) {
 
     return res.json({ token });
   } catch (err) {
-    logger &&
-      logger.error &&
-      logger.error("Staff login error:", err && err.stack ? err.stack : err);
+    console.error("[staffLogin] ERROR", err);
     return next(err);
   }
 }
