@@ -45,7 +45,7 @@ const ensureStaffAliasMiddleware =
     ? helpers.ensureStaffAliasMiddleware()
     : (req, res, next) => next();
 
-/**
+/** 
  * Routes:
  *
  * POST   /api/:rid/tables            -- Create new table (Admin only)

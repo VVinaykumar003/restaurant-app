@@ -232,7 +232,7 @@ async function staffLogin(req, res, next) {
         console.log(
           "[staffLogin] No staff PIN configured - comparing admin PIN..."
         );
-        matched = await bcrypt.compare(pin, adminHash);
+        matched = await bcrypt.compare(pin, adminHash); 
         console.log("[staffLogin] Admin PIN comparison result", { matched });
       }
     }
