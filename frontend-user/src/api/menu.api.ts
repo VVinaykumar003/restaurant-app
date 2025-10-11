@@ -1,7 +1,6 @@
+// menu.api.ts
 import { api } from "./client";
 
-export async function fetchMenu(rid: string) {
-  const res = await api(`/api/${rid}/admin/menu`, { method: "GET" });
-  return res;
+export async function fetchMenu(rid : string) {
+  return api(`/api/${rid}/admin/menu`, { method: "GET" });
 }
-

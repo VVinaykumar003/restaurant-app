@@ -97,4 +97,8 @@ router.get(
 // Order history (could be customer or staff): keep public but validate session query on controller side
 router.get("/history", orderController.getOrderHistory);
 
+
+//customer can se the order by ID 
+router.get("/:id/order" , orderController.getOrderById);
+
 module.exports = router;

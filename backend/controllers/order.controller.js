@@ -411,7 +411,7 @@ async function getOrderHistory(req, res, next) {
     const orders = await Order.find({
       restaurantId: rid,
       sessionId,
-      status: "done",
+      status: "placed",
     }).sort({ createdAt: -1 });
 
     return res.json(orders);
@@ -421,9 +421,36 @@ async function getOrderHistory(req, res, next) {
   }
 }
 
+async function  getOrderById(req ,res , next ) {
+  try {
+    const { rid, id } = req.params;
+    const {sessionId}= req.query;
+   
+    // console.log(rid,sessionId , id)
+
+     if (!sessionId) {
+      return res.status(400).json({ error: "Session ID required" });
+    }
+
+    const orders = await Order.find({
+      _id:id,
+      restaurantId: rid,
+      sessionId,
+      status:"placed"
+    }).sort({ createdAt: -1 });
+
+    return res.json(orders);
+  } catch (error) {
+    logger && logger.error && logger.error("Order history fetch error:", error);
+    return next(error);
+  }
+  
+}
+ 
 module.exports = {
   createOrder,
   updateOrderStatus,
   getActiveOrders,
   getOrderHistory,
+  getOrderById
 };
