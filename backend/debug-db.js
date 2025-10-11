@@ -1,8 +1,8 @@
 // debug-getmenu.js
-require("dotenv").config();
+require("dotenv").config(); 
 (async () => {
   const mongoose = require("mongoose");
-  const MONGO = process.env.MONGODB_URI || process.env.MONGO_ATLAS_URI || "mongodb://127.0.0.1:27017/swadsetu";
+  const MONGO = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/swadsetu";
   console.log("Connecting to", MONGO);
   await mongoose.connect(MONGO, { serverSelectionTimeoutMS: 5000 });
   const Admin = require("./models/admin.model");
